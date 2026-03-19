@@ -1,0 +1,39 @@
+name: Supabase Keep-Alive Cron
+
+# 1. متى يعمل السكريبت؟ (Triggers)
+on:
+  schedule:
+    # يعمل كل 3 أيام في منتصف الليل (UTC)
+    - cron: '0 0 */3 * *'
+  # يسمح بتشغيل السكريبت يدوياً للاختبار
+  workflow_dispatch: 
+
+# 2. المهام (Jobs)
+jobs:
+  ping-database:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 🌐 Ping Supabase REST API
+        # 3. جلب الأسرار بأمان
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          
+        # 4. تنفيذ أمر cURL
+        run: |
+          echo "Initiating keep-alive ping to Supabase..."
+          
+          # تنبيه: استبدل 'YOUR_TABLE_NAME' باسم أي جدول حقيقي في قاعدة بياناتك
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --request GET \
+            --url "${SUPABASE_URL}/rest/v1/YOUR_TABLE_NAME?select=id&limit=1" \
+            --header "apikey: ${SUPABASE_ANON_KEY}" \
+            --header "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+            
+          # 5. التحقق من النتيجة (Error Handling)
+          if [ "$HTTP_STATUS" -eq 200 ]; then
+            echo "✅ Success: Supabase is active. HTTP Status: $HTTP_STATUS"
+          else
+            echo "⚠️ Warning: Failed to reach Supabase. HTTP Status: $HTTP_STATUS"
+            exit 1
+          fi
