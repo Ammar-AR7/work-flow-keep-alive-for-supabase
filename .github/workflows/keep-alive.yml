@@ -26,7 +26,7 @@ jobs:
           
           # تنبيه: استبدل 'YOUR_TABLE_NAME' باسم أي جدول حقيقي في قاعدة بياناتك
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --request GET \
-            --url "${SUPABASE_URL}/rest/v1/YOUR_TABLE_NAME?select=id&limit=1" \
+            --url "${SUPABASE_URL}/rest/v1/profiles?select=id&limit=1" \
             --header "apikey: ${SUPABASE_ANON_KEY}" \
             --header "Authorization: Bearer ${SUPABASE_ANON_KEY}")
             
