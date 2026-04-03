@@ -1,10 +1,10 @@
 name: Supabase Keep-Alive Cron
 
-# 1. متى يعمل السكريبت؟ (Triggers)
+# 1. متى يعمل السكريبت؟
 on:
   schedule:
-    # يعمل كل 3 أيام في منتصف الليل (UTC)
-    - cron: '0 0 */3 * *'
+    # يعمل كل يومين في منتصف الليل (UTC) لضمان نشاط مستمر
+    - cron: '0 0 */2 * *'
   # يسمح بتشغيل السكريبت يدوياً للاختبار
   workflow_dispatch: 
 
@@ -14,26 +14,27 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: 🌐 Ping Supabase REST API
+      - name: 🌐 Ping Supabase Database
         # 3. جلب الأسرار بأمان
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          # 🚨 هام: استخدم مفتاح Service Role لضمان تنفيذ استعلام فعلي وتجاوز RLS
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} 
           
         # 4. تنفيذ أمر cURL
         run: |
-          echo "Initiating keep-alive ping to Supabase..."
+          echo "Initiating strong keep-alive ping to Supabase..."
           
-          # تنبيه: استبدل 'YOUR_TABLE_NAME' باسم أي جدول حقيقي في قاعدة بياناتك
+          # استبدل 'YOUR_TABLE_NAME' باسم جدول حقيقي وموجود
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --request GET \
-            --url "${SUPABASE_URL}/rest/v1/profiles?select=id&limit=1" \
-            --header "apikey: ${SUPABASE_ANON_KEY}" \
-            --header "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+            --url "${SUPABASE_URL}/rest/v1/YOUR_TABLE_NAME?select=id&limit=1" \
+            --header "apikey: ${SUPABASE_SERVICE_KEY}" \
+            --header "Authorization: Bearer ${SUPABASE_SERVICE_KEY}")
             
-          # 5. التحقق من النتيجة (Error Handling)
+          # 5. التحقق من النتيجة
           if [ "$HTTP_STATUS" -eq 200 ]; then
-            echo "✅ Success: Supabase is active. HTTP Status: $HTTP_STATUS"
+            echo "✅ Success: Supabase Database is awake and active. HTTP Status: $HTTP_STATUS"
           else
-            echo "⚠️ Warning: Failed to reach Supabase. HTTP Status: $HTTP_STATUS"
+            echo "⚠️ Error: Failed to ping database. HTTP Status: $HTTP_STATUS"
             exit 1
           fi
