@@ -1,40 +1,38 @@
-name: Supabase Keep-Alive Cron
+name: Supabase Ultimate Keep-Alive (Insert Method)
 
-# 1. متى يعمل السكريبت؟
 on:
   schedule:
-    # يعمل كل يومين في منتصف الليل (UTC) لضمان نشاط مستمر
+    # يعمل كل يومين لضمان بقاء المشروع نشطاً
     - cron: '0 0 */2 * *'
-  # يسمح بتشغيل السكريبت يدوياً للاختبار
-  workflow_dispatch: 
+  workflow_dispatch:
 
-# 2. المهام (Jobs)
 jobs:
-  ping-database:
+  keep-alive-db:
     runs-on: ubuntu-latest
     
     steps:
-      - name: 🌐 Ping Supabase Database
-        # 3. جلب الأسرار بأمان
+      - name: 🚀 Insert dummy row to wake up Database
         env:
+          # استخدام المتغيرات والأسرار التي تم إعدادها
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          # 🚨 هام: استخدم مفتاح Service Role لضمان تنفيذ استعلام فعلي وتجاوز RLS
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} 
           
-        # 4. تنفيذ أمر cURL
         run: |
-          echo "Initiating strong keep-alive ping to Supabase..."
+          echo "Initiating direct database write operation..."
           
-          # استبدل 'YOUR_TABLE_NAME' باسم جدول حقيقي وموجود
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --request GET \
-            --url "${SUPABASE_URL}/rest/v1/profiles?select=id&limit=1" \
+          # إرسال طلب POST ببيانات فارغة {} لأن قاعدة البيانات ستولد الـ id والوقت تلقائياً
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --request POST \
+            --url "${SUPABASE_URL}/rest/v1/keep_alive_logs" \
             --header "apikey: ${SUPABASE_SERVICE_KEY}" \
-            --header "Authorization: Bearer ${SUPABASE_SERVICE_KEY}")
+            --header "Authorization: Bearer ${SUPABASE_SERVICE_KEY}" \
+            --header "Content-Type: application/json" \
+            --header "Prefer: return=minimal" \
+            --data "{}")
             
-          # 5. التحقق من النتيجة
-          if [ "$HTTP_STATUS" -eq 200 ]; then
-            echo "✅ Success: Supabase Database is awake and active. HTTP Status: $HTTP_STATUS"
+          # التحقق من أن حالة الرد هي 201 (تم الإنشاء) أو 200 (نجاح)
+          if [ "$HTTP_STATUS" -eq 201 ] || [ "$HTTP_STATUS" -eq 200 ]; then
+            echo "✅ Success: Row inserted successfully! Database is awake. HTTP Status: $HTTP_STATUS"
           else
-            echo "⚠️ Error: Failed to ping database. HTTP Status: $HTTP_STATUS"
+            echo "⚠️ Error: Failed to insert row. HTTP Status: $HTTP_STATUS"
             exit 1
           fi
