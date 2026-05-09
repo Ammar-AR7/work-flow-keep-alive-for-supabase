@@ -1,4 +1,4 @@
-# Supabase Ultimate Keep-Alive Workflow
+# Supabase Keep-Alive Workflow
 
 [![GitHub Actions Status](https://img.shields.io/github/actions/workflow/status/your-username/your-repo/keep-alive.yml?branch=main)](https://github.com/your-username/your-repo/actions)
 
